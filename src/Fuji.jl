@@ -14,25 +14,41 @@ type FujiServer
 end
 
 FujiServer() = FujiServer(Route[])
+log(str...) = println(str...)
 
 function route!(action::Function, server::FujiServer, path::AbstractString)
     route = Route(action, path)
     push!(server.routes, route)
 end
 
-function start(theserver::FujiServer)
-    http = HttpHandler() do req::Request, res::Response
-        for route in theserver.routes
+function start(server::FujiServer)
+    http = HttpHandler() do req, res
+        timestamp = Dates.format(now(), "u d, yyyy HH:MM:SS")
+
+        response = Response(404)
+
+        for route in server.routes
             if route.path == req.resource
-                return Response(route.action())
+                response = Response(route.action())
             end
         end
 
-        Response(404)
+        log("[", timestamp, "] ", req.method, " ", req.resource, " -> ", response.status)
+
+        response
     end
 
-    server = Server(http)
-    run(server, 8000)
+    http.events["listen"] = (saddr) -> println(" * Running on http://$saddr/ (Press CTRL+C to quit)")
+
+    web_server = Server(http)
+
+    try
+        run(web_server, host=IPv4(127, 0, 0, 1), port=8000)
+    catch e
+        if isa(e, InterruptException)
+            println("Stopping server...")
+        end
+    end
 end
 
-end # module
+end
