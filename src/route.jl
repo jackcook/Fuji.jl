@@ -2,10 +2,10 @@ import Base.ismatch
 
 immutable Route
     action::Function
-    endpoint::AbstractString
+    endpoint::String
 end
 
-function ismatch(route::Route, request::Request)
+function ismatch(request::Request, route::Route)
     named_param_regex = r":[A-z0-9\-_]+"
     splat_param_regex = r"\*"
     component_string = "([A-z0-9\\-_]+)"

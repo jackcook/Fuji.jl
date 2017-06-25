@@ -1,11 +1,22 @@
 type FujiRequest
+    headers::Dict{String,String}
+    method::String
     params::Dict{String,String}
+    resource::String
     splat::Array{String,1}
 
-    FujiRequest() = new(Dict{String,String}(), Array{String,1}())
+    FujiRequest() = new(Dict{String,String}(), "", Dict{String,String}(), "", Array{String,1}())
 
-    FujiRequest(route::Route, request::Request) = begin
-        req = new()
+    FujiRequest(req::Request) = new(
+        Dict{String,String}(req.headers), # headers
+        req.method, # method
+        Dict{String,String}(), # params
+        req.resource, # resource
+        Array{String,1}() # splat
+    )
+
+    FujiRequest(req::Request, route::Route) = begin
+        request = FujiRequest(req)
 
         named_param_regex = r":([A-z0-9\-_]+)"
         splat_param_regex = r"\*"
@@ -37,7 +48,7 @@ type FujiRequest
                 params[named_names[i]] = named_values[i]
             end
 
-            req.params = params
+            request.params = params
         end
 
         if contains(route.endpoint, "*")
@@ -50,9 +61,9 @@ type FujiRequest
                 push!(splat, capture)
             end
 
-            req.splat = splat
+            request.splat = splat
         end
 
-        req
+        request
     end
 end

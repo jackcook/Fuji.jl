@@ -7,43 +7,43 @@ get(endpoint) = Requests.get("http://localhost:8000$endpoint")
 @spawn Fuji.start()
 
 @testset "simple route" begin
-    @test size(server.routes, 1) == 0
+    @test size(Fuji.server.routes, 1) == 0
 
-    route("/hi") do req
+    route("/hi") do req, res
         "hi"
     end
 
-    @test size(server.routes, 1) == 1
-    @test server.routes[1].endpoint == "/hi"
+    @test size(Fuji.server.routes, 1) == 1
+    @test Fuji.server.routes[1].endpoint == "/hi"
 
     @test get("/hi").status == 200
 end
 
 @testset "adding two of the same route" begin
-    @test size(server.routes, 1) == 1
+    @test size(Fuji.server.routes, 1) == 1
 
-    route("/hi") do req
+    route("/hi") do req, res
         "hello"
     end
 
-    @test size(server.routes, 1) == 1
+    @test size(Fuji.server.routes, 1) == 1
     @test length(get("/hi").data) == 5
 end
 
 @testset "removing a route" begin
-    r = route("/hi") do req
+    r = route("/hi") do req, res
         "hello"
     end
 
-    @test size(server.routes, 1) == 1
+    @test size(Fuji.server.routes, 1) == 1
 
     unroute(r)
 
-    @test size(server.routes, 1) == 0
+    @test size(Fuji.server.routes, 1) == 0
 end
 
 @testset "named parameter" begin
-    route("/hello/:name") do req
+    route("/hello/:name") do req, res
         string("hello, ", req.params["name"], "!")
     end
 
@@ -59,7 +59,7 @@ end
 end
 
 @testset "splat parameter" begin
-    route("/hi/*") do req
+    route("/hi/*") do req, res
         string("hi, ", req.splat[1], "!")
     end
 
@@ -72,4 +72,32 @@ end
     @test length(get("/hi/jack").data) == 9
 
     @test get("/hi/j-a_ck0-1").status == 200
+end
+
+@testset "before filter" begin
+    x = 0
+
+    before() do req, res
+        x = 1
+    end
+
+    route("/before") do req, res
+        string(x)
+    end
+
+    @test get("/before").data[1] == 0x31 # 1
+end
+
+@testset "after filter" begin
+    x = 0
+
+    after() do req, res
+        x = 1
+    end
+
+    route("/after") do req, res
+        string(x)
+    end
+
+    @test get("/after").data[1] == 0x30 # 0
 end

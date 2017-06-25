@@ -6,16 +6,20 @@ include("log.jl")
 include("route.jl")
 include("request.jl")
 
-export FujiRequest, FujiServer, route, server, start, unroute
+export FujiRequest, FujiServer, after, before, route, start, unroute
 
 type FujiServer
+    after::Nullable{Function}
+    before::Nullable{Function}
     routes::Array{Route,1}
-    on::Bool
 end
 
-server = FujiServer(Array{Route,1}(), false)
+server = FujiServer(Nullable{Function}(), Nullable{Function}(), Array{Route,1}())
 
-function route(action::Function, endpoint::AbstractString)
+after(action::Function) = server.after = action
+before(action::Function) = server.before = action
+
+function route(action::Function, endpoint::String)
     route = Route(action, endpoint)
 
     # ensure that there is only one route with a given endpoint
@@ -41,25 +45,49 @@ end
 function start(host=IPv4(127, 0, 0, 1), port=8000)
     http = HttpHandler() do req, res
         timestamp = Dates.format(now(), "u d, yyyy HH:MM:SS")
-
-        response = Response(404)
+        request = FujiRequest(req)
+        route_found = false
 
         for route in server.routes
-            if ismatch(route, req)
-                request = FujiRequest(route, req)
-                response = Response(route.action(request))
+            if ismatch(req, route)
+                request = FujiRequest(req, route)
+
+                if !isnull(server.before)
+                    server.before.value(request, res)
+                end
+
+                value = route.action(request, res)
+
+                if isa(value, Int64)
+                    res.status = value
+                elseif isa(value, AbstractString)
+                    res.data = value
+                end
+
+                route_found = true
+
                 break
             end
         end
 
-        log("[", timestamp, "] ", req.method, " ", req.resource, " -> ", response.status)
+        if !route_found
+            if !isnull(server.before)
+                server.before.value(request, res)
+            end
 
-        response
+            res.status = 404
+        end
+
+        log("[", timestamp, "] ", request.method, " ", request.resource, " -> ", res.status)
+
+        if !isnull(server.after)
+            server.after.value(request, res)
+        end
+
+        res
     end
 
     http.events["listen"] = (saddr) -> log(" * Running on http://$saddr/ (Press CTRL+C to quit)")
-
-    server.on = true
     web_server = Server(http)
 
     try
