@@ -2,6 +2,7 @@ module Fuji
 
 using HttpServer
 
+include("log.jl")
 include("route.jl")
 include("request.jl")
 
@@ -13,9 +14,6 @@ type FujiServer
 end
 
 server = FujiServer(Array{Route,1}(), false)
-
-log(str...) = println(str...)
-warn(str...) = println("WARNING: ", str...)
 
 function route(action::Function, endpoint::AbstractString)
     route = Route(action, endpoint)
@@ -29,12 +27,14 @@ function route(action::Function, endpoint::AbstractString)
         warn("There was already a route with the endpoint ", endpoint, ". Removing the previous one now...")
     end
 
+    # add the route to the routes list, effectively turning it on
     push!(server.routes, route)
 
     route
 end
 
 function unroute(route::Route)
+    # remove all routes with the same endpoint as the one that was just passed
     filter!(r -> r.endpoint != route.endpoint, server.routes)
 end
 
