@@ -5,21 +5,39 @@ using HttpServer
 include("route.jl")
 include("request.jl")
 
-export FujiRequest, FujiServer, route!, start
+export FujiRequest, FujiServer, route, server, start, unroute
 
 type FujiServer
     routes::Array{Route,1}
 end
 
-FujiServer() = FujiServer(Route[])
-log(str...) = println(str...)
+server = FujiServer(Array{Route,1}())
 
-function route!(action::Function, server::FujiServer, endpoint::AbstractString)
+log(str...) = println(str...)
+warn(str...) = println("WARNING: ", str...)
+
+function route(action::Function, endpoint::AbstractString)
     route = Route(action, endpoint)
+
+    # ensure that there is only one route with a given endpoint
+    before = size(server.routes, 1)
+    unroute(route)
+    after = size(server.routes, 1)
+
+    if before > after
+        warn("There was already a route with the endpoint ", endpoint, ". Removing the previous one now...")
+    end
+
     push!(server.routes, route)
+
+    route
 end
 
-function start(server::FujiServer, host=IPv4(127, 0, 0, 1), port=8000)
+function unroute(route::Route)
+    filter!(r -> r.endpoint != route.endpoint, server.routes)
+end
+
+function start(host=IPv4(127, 0, 0, 1), port=8000)
     http = HttpHandler() do req, res
         timestamp = Dates.format(now(), "u d, yyyy HH:MM:SS")
 
@@ -46,7 +64,7 @@ function start(server::FujiServer, host=IPv4(127, 0, 0, 1), port=8000)
         run(web_server, host=host, port=port)
     catch e
         if isa(e, InterruptException)
-            println("Stopping server...")
+            log("Stopping server...")
         end
     end
 end

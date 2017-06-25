@@ -4,25 +4,46 @@ using Requests
 
 get(endpoint) = Requests.get("http://localhost:8000$endpoint")
 
-server = FujiServer()
-@spawn Fuji.start(server)
+@spawn Fuji.start()
 
 @testset "simple route" begin
     @test size(server.routes, 1) == 0
 
-    route!(server, "/hi") do req
+    route("/hi") do req
         "hi"
     end
 
     @test size(server.routes, 1) == 1
     @test server.routes[1].endpoint == "/hi"
 
-    @test get("").status == 404
     @test get("/hi").status == 200
 end
 
+@testset "adding two of the same route" begin
+    @test size(server.routes, 1) == 1
+
+    route("/hi") do req
+        "hello"
+    end
+
+    @test size(server.routes, 1) == 1
+    @test length(get("/hi").data) == 5
+end
+
+@testset "removing a route" begin
+    r = route("/hi") do req
+        "hello"
+    end
+
+    @test size(server.routes, 1) == 1
+
+    unroute(r)
+
+    @test size(server.routes, 1) == 0
+end
+
 @testset "splat param" begin
-    route!(server, "/hello/:name") do req
+    route("/hello/:name") do req
         string("hello, ", req.params["name"], "!")
     end
 

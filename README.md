@@ -10,17 +10,15 @@ A lightweight web server written in Julia.
 ```julia
 using Fuji
 
-server = FujiServer()
-
-route!(server, "/hi") do req
+route("/hi") do req
     "hi!"
 end
 
-route!(server, "/hello/:name") do req
+route("/hello/:name") do req
     string("hello, ", req.params["name"], "!")
 end
 
-Fuji.start(server)
+Fuji.start()
 ```
 
 ## License
