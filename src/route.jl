@@ -1,3 +1,5 @@
+using HttpServer
+
 import Base.ismatch
 
 immutable Route
