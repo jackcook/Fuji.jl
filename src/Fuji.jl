@@ -2,12 +2,9 @@ module Fuji
 
 using HttpServer
 
-export FujiServer, route!, start
+include("route.jl")
 
-immutable Route
-    action::Function
-    path::AbstractString
-end
+export FujiServer, route!, start
 
 type FujiServer
     routes::Array{Route,1}
@@ -16,8 +13,8 @@ end
 FujiServer() = FujiServer(Route[])
 log(str...) = println(str...)
 
-function route!(action::Function, server::FujiServer, path::AbstractString)
-    route = Route(action, path)
+function route!(action::Function, server::FujiServer, endpoint::AbstractString)
+    route = Route(action, endpoint)
     push!(server.routes, route)
 end
 
@@ -28,7 +25,7 @@ function start(server::FujiServer, host=IPv4(127, 0, 0, 1), port=8000)
         response = Response(404)
 
         for route in server.routes
-            if route.path == req.resource
+            if ismatch(route, req)
                 response = Response(route.action())
             end
         end
