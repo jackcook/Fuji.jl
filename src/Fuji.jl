@@ -9,9 +9,10 @@ export FujiRequest, FujiServer, route, server, start, unroute
 
 type FujiServer
     routes::Array{Route,1}
+    on::Bool
 end
 
-server = FujiServer(Array{Route,1}())
+server = FujiServer(Array{Route,1}(), false)
 
 log(str...) = println(str...)
 warn(str...) = println("WARNING: ", str...)
@@ -58,6 +59,7 @@ function start(host=IPv4(127, 0, 0, 1), port=8000)
 
     http.events["listen"] = (saddr) -> log(" * Running on http://$saddr/ (Press CTRL+C to quit)")
 
+    server.on = true
     web_server = Server(http)
 
     try

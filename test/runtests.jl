@@ -42,7 +42,7 @@ end
     @test size(server.routes, 1) == 0
 end
 
-@testset "splat param" begin
+@testset "named parameter" begin
     route("/hello/:name") do req
         string("hello, ", req.params["name"], "!")
     end
@@ -56,4 +56,20 @@ end
     @test length(get("/hello/jack").data) == 12
 
     @test get("/hello/j-a_ck0-1").status == 200
+end
+
+@testset "splat parameter" begin
+    route("/hi/*") do req
+        string("hi, ", req.splat[1], "!")
+    end
+
+    @test get("/hi/:name").status == 404
+    @test get("/hi").status == 404
+    @test get("/hi/jack/asdf").status == 404
+    @test get("/hi/ja;ck").status == 404
+
+    @test get("/hi/jack").status == 200
+    @test length(get("/hi/jack").data) == 9
+
+    @test get("/hi/j-a_ck0-1").status == 200
 end
