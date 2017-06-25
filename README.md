@@ -12,8 +12,12 @@ using Fuji
 
 server = FujiServer()
 
-route!(server, "/hello") do
+route!(server, "/hi") do req
     "hi!"
+end
+
+route!(server, "/hello/:name") do req
+    string("hello, ", req.params["name"], "!")
 end
 
 Fuji.start(server)
