@@ -13,20 +13,26 @@ get(endpoint) = Requests.get("http://localhost:8000$endpoint")
         "hi"
     end
 
-    @test size(Fuji.server.routes, 1) == 1
+    route("/histatus") do req, res
+        204
+    end
+
+    @test size(Fuji.server.routes, 1) == 2
     @test Fuji.server.routes[1].endpoint == "/hi"
+    @test Fuji.server.routes[2].endpoint == "/histatus"
 
     @test get("/hi").status == 200
+    @test get("/histatus").status == 204
 end
 
 @testset "adding two of the same route" begin
-    @test size(Fuji.server.routes, 1) == 1
+    @test size(Fuji.server.routes, 1) == 2
 
     route("/hi") do req, res
         "hello"
     end
 
-    @test size(Fuji.server.routes, 1) == 1
+    @test size(Fuji.server.routes, 1) == 2
     @test length(get("/hi").data) == 5
 end
 
@@ -35,11 +41,11 @@ end
         "hello"
     end
 
-    @test size(Fuji.server.routes, 1) == 1
+    @test size(Fuji.server.routes, 1) == 2
 
     unroute(r)
 
-    @test size(Fuji.server.routes, 1) == 0
+    @test size(Fuji.server.routes, 1) == 1
 end
 
 @testset "named parameter" begin
@@ -78,7 +84,7 @@ end
     x = 0
 
     before() do req, res
-        x = 1
+        x += 1
     end
 
     route("/before") do req, res
@@ -86,13 +92,16 @@ end
     end
 
     @test get("/before").data[1] == 0x31 # 1
+    @test get("/something").status == 404
+
+    @test x == 2
 end
 
 @testset "after filter" begin
     x = 0
 
     after() do req, res
-        x = 1
+        x += 1
     end
 
     route("/after") do req, res
