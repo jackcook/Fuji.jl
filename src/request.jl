@@ -5,8 +5,6 @@ type FujiRequest
     resource::String
     splat::Array{String,1}
 
-    FujiRequest() = new(Dict{String,String}(), "", Dict{String,String}(), "", Array{String,1}())
-
     FujiRequest(req::Request) = new(
         Dict{String,String}(req.headers), # headers
         req.method, # method

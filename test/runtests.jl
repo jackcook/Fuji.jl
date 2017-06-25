@@ -2,7 +2,13 @@ using Base.Test
 using Fuji
 using Requests
 
+import Fuji.post, Fuji.put, Fuji.patch, Fuji.delete
+
 get(endpoint) = Requests.get("http://localhost:8000$endpoint")
+post_req(endpoint) = Requests.post("http://localhost:8000$endpoint")
+put_req(endpoint) = Requests.put("http://localhost:8000$endpoint")
+patch_req(endpoint) = Requests.patch("http://localhost:8000$endpoint")
+delete_req(endpoint) = Requests.delete("http://localhost:8000$endpoint")
 
 @spawn Fuji.start()
 
@@ -25,27 +31,65 @@ get(endpoint) = Requests.get("http://localhost:8000$endpoint")
     @test get("/histatus").status == 204
 end
 
+@testset "routes with other http methods" begin
+    post("/post") do req, res
+        "hi"
+    end
+
+    @test post_req("/post").status == 200
+
+    put("/put") do req, res
+        "hi"
+    end
+
+    @test put_req("/put").status == 200
+
+    patch("/patch") do req, res
+        "hi"
+    end
+
+    @test patch_req("/patch").status == 200
+
+    delete("/delete") do req, res
+        "hi"
+    end
+
+    @test delete_req("/delete").status == 200
+end
+
 @testset "adding two of the same route" begin
-    @test size(Fuji.server.routes, 1) == 2
+    @test size(Fuji.server.routes, 1) == 6
 
     route("/hi") do req, res
         "hello"
     end
 
-    @test size(Fuji.server.routes, 1) == 2
+    @test size(Fuji.server.routes, 1) == 6
     @test length(get("/hi").data) == 5
 end
 
-@testset "removing a route" begin
-    r = route("/hi") do req, res
+@testset "adding a route with the same endpoint but a different method" begin
+    @test size(Fuji.server.routes, 1) == 6
+
+    post("/hi") do req, res
         "hello"
     end
 
-    @test size(Fuji.server.routes, 1) == 2
+    @test size(Fuji.server.routes, 1) == 7
+end
+
+@testset "removing a route" begin
+    @test size(Fuji.server.routes, 1) == 7
+
+    r = route("/toremove") do req, res
+        "hello"
+    end
+
+    @test size(Fuji.server.routes, 1) == 8
 
     unroute(r)
 
-    @test size(Fuji.server.routes, 1) == 1
+    @test size(Fuji.server.routes, 1) == 7
 end
 
 @testset "named parameter" begin
@@ -70,7 +114,7 @@ end
     end
 
     @test get("/hi/:name").status == 404
-    @test get("/hi").status == 404
+    @test get("/hi/").status == 404
     @test get("/hi/jack/asdf").status == 404
     @test get("/hi/ja;ck").status == 404
 

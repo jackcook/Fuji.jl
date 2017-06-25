@@ -6,7 +6,7 @@ include("log.jl")
 include("route.jl")
 include("request.jl")
 
-export FujiRequest, FujiServer, after, before, route, start, unroute
+export FujiRequest, FujiServer, after, before, delete, get, patch, post, put, route, start, unroute
 
 type FujiServer
     after::Nullable{Function}
@@ -19,8 +19,8 @@ server = FujiServer(Nullable{Function}(), Nullable{Function}(), Array{Route,1}()
 after(action::Function) = server.after = action
 before(action::Function) = server.before = action
 
-function route(action::Function, endpoint::String)
-    route = Route(action, endpoint)
+function route(action::Function, endpoint::String, methods::Array{String,1}=["GET"])
+    route = Route(action, endpoint, methods)
 
     # ensure that there is only one route with a given endpoint
     before = size(server.routes, 1)
@@ -37,9 +37,20 @@ function route(action::Function, endpoint::String)
     route
 end
 
+post(action::Function, endpoint::String) = route(action, endpoint, ["POST"])
+put(action::Function, endpoint::String) = route(action, endpoint, ["PUT"])
+patch(action::Function, endpoint::String) = route(action, endpoint, ["PATCH"])
+delete(action::Function, endpoint::String) = route(action, endpoint, ["DELETE"])
+
 function unroute(route::Route)
     # remove all routes with the same endpoint as the one that was just passed
-    filter!(r -> r.endpoint != route.endpoint, server.routes)
+    filter!(server.routes) do r
+        if r.endpoint == route.endpoint
+            return length(intersect(r.methods, route.methods)) == 0
+        end
+
+        true
+    end
 end
 
 function start(host=IPv4(127, 0, 0, 1), port=8000)
