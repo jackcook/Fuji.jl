@@ -2,7 +2,7 @@ using Base.Test
 using Fuji
 using Requests
 
-req(endpoint) = Requests.get("http://localhost:8000$endpoint")
+get(endpoint) = Requests.get("http://localhost:8000$endpoint")
 
 server = FujiServer()
 @spawn Fuji.start(server)
@@ -10,28 +10,29 @@ server = FujiServer()
 @testset "simple route" begin
     @test size(server.routes, 1) == 0
 
-    route!(server, "/hi") do
+    route!(server, "/hi") do req
         "hi"
     end
 
     @test size(server.routes, 1) == 1
     @test server.routes[1].endpoint == "/hi"
-    @test server.routes[1].action() == "hi"
 
-    @test req("").status == 404
-    @test req("/hi").status == 200
+    @test get("").status == 404
+    @test get("/hi").status == 200
 end
 
 @testset "splat param" begin
-    route!(server, "/hello/:name") do
-        "hello!"
+    route!(server, "/hello/:name") do req
+        string("hello, ", req.params["name"], "!")
     end
 
-    @test Requests.get("http://localhost:8000/hello/:name").status == 404
-    @test Requests.get("http://localhost:8000/hello").status == 404
-    @test Requests.get("http://localhost:8000/hello/jack/asdf").status == 404
-    @test Requests.get("http://localhost:8000/hello/ja;ck").status == 404
+    @test get("/hello/:name").status == 404
+    @test get("/hello").status == 404
+    @test get("/hello/jack/asdf").status == 404
+    @test get("/hello/ja;ck").status == 404
 
-    @test Requests.get("http://localhost:8000/hello/jack").status == 200
-    @test Requests.get("http://localhost:8000/hello/j-a_ck0-1").status == 200
+    @test get("/hello/jack").status == 200
+    @test length(get("/hello/jack").data) == 12
+
+    @test get("/hello/j-a_ck0-1").status == 200
 end

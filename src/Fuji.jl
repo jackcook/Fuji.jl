@@ -3,8 +3,9 @@ module Fuji
 using HttpServer
 
 include("route.jl")
+include("request.jl")
 
-export FujiServer, route!, start
+export FujiRequest, FujiServer, route!, start
 
 type FujiServer
     routes::Array{Route,1}
@@ -26,7 +27,9 @@ function start(server::FujiServer, host=IPv4(127, 0, 0, 1), port=8000)
 
         for route in server.routes
             if ismatch(route, req)
-                response = Response(route.action())
+                request = FujiRequest(route, req)
+                response = Response(route.action(request))
+                break
             end
         end
 
