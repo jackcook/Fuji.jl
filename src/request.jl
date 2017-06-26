@@ -1,3 +1,17 @@
+"""
+A `FujiRequest` represents an HTTP request sent to the Fuji webserver. It
+currently has five fields:
+
+* `headers`: A dictionary of the request headers (e.g. Host, User-Agent)
+* `method`: The HTTP method used (e.g. GET, POST)
+* `params`: A dictionary of the named parameters used (e.g. if the endpoint was
+    /hello/:name and the request was /hello/jack, this would be
+    ["name": "jack"])
+* `resource`: The resource of the request. Will typically be the part after the
+    domain name but before the query parameters (e.g. /hello/jack)
+* `splat`: An array of any splat parameters used (e.g. if the endpoint was
+    /hello/* and the request was /hello/jack, this would be ["jack"])
+"""
 type FujiRequest
     headers::Dict{String,String}
     method::String
