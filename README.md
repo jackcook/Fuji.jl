@@ -10,11 +10,11 @@ A lightweight web server written in Julia.
 ```julia
 using Fuji
 
-route("/hi") do req
+route("/hi") do req, res
     "hi!"
 end
 
-route("/hello/:name") do req
+route("/hello/:name") do req, res
     string("hello, ", req.params["name"], "!")
 end
 
