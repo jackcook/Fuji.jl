@@ -4,3 +4,9 @@ makedocs(
     format = :html,
     sitename = "Fuji"
 )
+
+deploydocs(
+    repo = "github.com/jackcook/Fuji.jl.git",
+    julia = "0.6",
+    osname = "linux"
+)
