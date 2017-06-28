@@ -8,5 +8,8 @@ makedocs(
 deploydocs(
     repo = "github.com/jackcook/Fuji.jl.git",
     julia = "0.6",
-    osname = "linux"
+    osname = "linux",
+    deps = nothing,
+    make = nothing,
+    target = "build"
 )
