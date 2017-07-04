@@ -154,3 +154,19 @@ end
 
     @test get("/after").data[1] == 0x30 # 0
 end
+
+@testset "query parameters" begin
+    route("/hello") do req, res
+        # if "name" was in the request, return it, otherwise return an empty 200
+        try
+            req.query_params["name"]
+        catch
+            200
+        end
+    end
+
+    @test length(get("/hello?name=jack").data) == 4
+    @test get("/hello?").status == 200
+    @test get("/hello?test&hello").status == 200
+    @test get("/hello?t=4&x=3&name=2").data[1] == 0x32 # 2
+end

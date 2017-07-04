@@ -36,7 +36,7 @@ function ismatch(request::Request, route::Route)
         endpoint = replace(endpoint, splat_param_regex, component_string)
 
         endpoint_regex = Regex(string("^", endpoint, "\$"))
-        return ismatch(endpoint_regex, request.resource)
+        return ismatch(endpoint_regex, split(request.resource, "?")[1])
     end
 
     false
