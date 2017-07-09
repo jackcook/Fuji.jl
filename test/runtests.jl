@@ -157,16 +157,31 @@ end
 
 @testset "query parameters" begin
     route("/hello") do req, res
-        # if "name" was in the request, return it, otherwise return an empty 200
+        # if "name" was in the request, return it, otherwise return an empty 204
         try
             req.query_params["name"]
         catch
-            200
+            204
         end
     end
 
     @test length(get("/hello?name=jack").data) == 4
-    @test get("/hello?").status == 200
-    @test get("/hello?test&hello").status == 200
+    @test get("/hello?name=jack").status == 200
+    @test get("/hello?").status == 204
+    @test get("/hello?test&hello").status == 204
     @test get("/hello?t=4&x=3&name=2").data[1] == 0x32 # 2
+end
+
+@testset "templating" begin
+    route("/template") do req, res
+        render_template("template.html", Dict("name" => "Jack"))
+    end
+
+    @test get("/template").status == 200
+
+    f = open("template_expected.html")
+    contents = readstring(f)
+    close(f)
+
+    @test contents == render_template("template.html", Dict("name" => "Jack"))
 end
